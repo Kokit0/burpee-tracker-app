@@ -110,16 +110,26 @@ function App() {
         const csvText = await response.text();
         
         const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-        // Expecting: Fecha, Servicio, Burpees, Squats
-        const dataRows = lines[0].toLowerCase().includes('fecha') || lines[0].toLowerCase().includes('mes') ? lines.slice(1) : lines;
+        if (lines.length < 2) throw new Error('La hoja está vacía.');
+
+        const headerLine = lines[0].toLowerCase();
+        const headers = headerLine.split(',').map(h => h.trim());
+        
+        const dateIdx = headers.findIndex(h => h.includes('fecha') || h.includes('mes'));
+        const serviceIdx = headers.findIndex(h => h.includes('servicio') || h.includes('clase'));
+        const burpeesIdx = headers.findIndex(h => h.includes('burpees'));
+        const squatsIdx = headers.findIndex(h => h.includes('squats'));
+        
+        const dataRows = lines.slice(1);
         
         const parsed = [];
         dataRows.forEach(row => {
           const parts = row.split(',');
-          const rawDate = parts[0] ? parts[0].trim() : '';
-          const serviceStr = parts[1] ? parts[1].trim() : '';
-          const burpeesStr = parts[2] ? parts[2].replace(/"/g, '').replace(/,/g, '').trim() : '0';
-          const squatsStr = parts[3] ? parts[3].replace(/"/g, '').replace(/,/g, '').trim() : '0';
+          
+          const rawDate = dateIdx >= 0 && parts[dateIdx] ? parts[dateIdx].trim() : '';
+          const serviceStr = serviceIdx >= 0 && parts[serviceIdx] ? parts[serviceIdx].trim() : '';
+          const burpeesStr = burpeesIdx >= 0 && parts[burpeesIdx] ? parts[burpeesIdx].replace(/"/g, '').replace(/,/g, '').trim() : '0';
+          const squatsStr = squatsIdx >= 0 && parts[squatsIdx] ? parts[squatsIdx].replace(/"/g, '').replace(/,/g, '').trim() : '0';
 
           if (rawDate) {
             parsed.push({
