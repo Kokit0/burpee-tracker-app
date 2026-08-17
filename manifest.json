@@ -1,0 +1,17 @@
+{
+  "name": "Cony NuFitness App",
+  "short_name": "NuFitness",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#FF4D00",
+  "description": "Aplicación de seguimiento de burpees para clientes de NuFitness.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
