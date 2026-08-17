@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import './index.css';
 
 const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT44e0CJHeGd_n75F4wPQxt4JqOvyK7cQfMM8ZXK8xv7ldcqQOdCKXA5b7czGA5JDgUbPEt9sCNq6IG/pub?output=csv";
-const GOAL = 10000;
+const GOALS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT44e0CJHeGd_n75F4wPQxt4JqOvyK7cQfMM8ZXK8xv7ldcqQOdCKXA5b7czGA5JDgUbPEt9sCNq6IG/pub?gid=970350612&single=true&output=csv";
 
 const MONTH_NAMES = {
   "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
@@ -39,7 +39,7 @@ function parseDate(dateStr) {
   return { raw: dateStr, monthYear: dateStr, sortKey: '0', dayOnly: dateStr };
 }
 
-function ProgressChart({ dailyHistory }) {
+function ProgressChart({ dailyHistory, currentGoal }) {
   if (!dailyHistory || dailyHistory.length === 0) return null;
 
   // Sort ascending for the chart (oldest to newest)
@@ -64,10 +64,10 @@ function ProgressChart({ dailyHistory }) {
   const innerHeight = height - paddingY * 2;
 
   const dx = innerWidth / Math.max(1, points.length - 1);
-  const maxAccumulated = Math.max(GOAL, points[points.length - 1].accumulated);
-  const maxY = Math.max(GOAL, maxAccumulated * 1.1); // Add 10% padding above
+  const maxAccumulated = Math.max(currentGoal, points[points.length - 1].accumulated);
+  const maxY = Math.max(currentGoal, maxAccumulated * 1.1); // Add 10% padding above
 
-  const goalY = height - paddingY - (GOAL / maxY) * innerHeight;
+  const goalY = height - paddingY - (currentGoal / maxY) * innerHeight;
 
   const pathD = points.map((p, i) => {
     const x = paddingX + i * dx;
@@ -80,7 +80,7 @@ function ProgressChart({ dailyHistory }) {
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
         {/* Goal Line */}
         <line x1={paddingX} y1={goalY} x2={width - paddingX} y2={goalY} stroke="var(--text-secondary)" strokeDasharray="8 8" strokeWidth="2" opacity="0.5" />
-        <text x={paddingX} y={goalY - 15} fill="var(--text-secondary)" fontSize="20" fontWeight="600" opacity="0.7">META {GOAL.toLocaleString()}</text>
+        <text x={paddingX} y={goalY - 15} fill="var(--text-secondary)" fontSize="20" fontWeight="600" opacity="0.7">META {currentGoal.toLocaleString()}</text>
 
         {/* Progress Line */}
         <path d={pathD} fill="none" stroke="var(--accent-color)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
@@ -104,6 +104,11 @@ function ProgressChart({ dailyHistory }) {
 
 function App() {
   const [allData, setAllData] = useState([]);
+  const [goals, setGoals] = useState({
+    'Hyrox': { 'Burpees': 10000, 'Squats': 10000 },
+    'Funcional': { 'Burpees': 10000, 'Squats': 10000 }
+  });
+
   const [activeClass, setActiveClass] = useState('Hyrox'); // 'Hyrox' | 'Funcional'
   const [activeExercise, setActiveExercise] = useState('Burpees'); // 'Burpees' | 'Squats'
   
@@ -117,10 +122,37 @@ function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(SPREADSHEET_CSV_URL);
-        if (!response.ok) throw new Error('Error al cargar los datos');
-        const csvText = await response.text();
+        const [dataRes, goalsRes] = await Promise.all([
+          fetch(SPREADSHEET_CSV_URL),
+          fetch(GOALS_CSV_URL)
+        ]);
+
+        if (!dataRes.ok || !goalsRes.ok) throw new Error('Error al cargar los datos');
         
+        const csvText = await dataRes.text();
+        const goalsText = await goalsRes.text();
+        
+        // --- Parse Goals ---
+        const goalLines = goalsText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const parsedGoals = {
+          'Hyrox': { 'Burpees': 10000, 'Squats': 10000 },
+          'Funcional': { 'Burpees': 10000, 'Squats': 10000 }
+        };
+        
+        if (goalLines.length > 1) {
+          goalLines.slice(1).forEach(row => {
+             const pts = row.split(',');
+             if (pts.length >= 3) {
+                const clase = pts[0].trim().toLowerCase().includes('funcional') ? 'Funcional' : 'Hyrox';
+                const ej = pts[1].trim().toLowerCase().includes('squats') ? 'Squats' : 'Burpees';
+                const meta = parseInt(pts[2].replace(/"/g, '').replace(/,/g, ''), 10) || 10000;
+                parsedGoals[clase][ej] = meta;
+             }
+          });
+        }
+        setGoals(parsedGoals);
+
+        // --- Parse Data ---
         const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
         if (lines.length < 2) throw new Error('La hoja está vacía.');
 
@@ -153,7 +185,7 @@ function App() {
           }
         });
 
-        if (parsed.length === 0) throw new Error('La hoja está vacía o el formato no es válido.');
+        if (parsed.length === 0) throw new Error('No se encontraron datos en la hoja.');
         
         setAllData(parsed);
         setLoading(false);
@@ -213,6 +245,8 @@ function App() {
   const safeMonthIndex = Math.min(currentMonthIndex, Math.max(0, monthlyData.length - 1));
   const currentMonthObj = monthlyData[safeMonthIndex] || { monthYear: "---", total: 0, latestSession: null, dailyHistory: [] };
 
+  const currentGoal = goals[activeClass][activeExercise];
+
   if (loading) {
     return (
       <div className="app-container">
@@ -251,7 +285,7 @@ function App() {
               <p className="label">Total del Grupo</p>
               <h1 className="counter-value">
                 {currentMonthObj.total.toLocaleString('en-US')}
-                <span className="goal-text"> / {GOAL.toLocaleString('en-US')}</span>
+                <span className="goal-text"> / {currentGoal.toLocaleString('en-US')}</span>
               </h1>
               <h2 className="month-display">{currentMonthObj.monthYear}</h2>
               {currentMonthObj.latestSession && (
@@ -261,7 +295,7 @@ function App() {
               )}
             </div>
 
-            <ProgressChart dailyHistory={currentMonthObj.dailyHistory} />
+            <ProgressChart dailyHistory={currentMonthObj.dailyHistory} currentGoal={currentGoal} />
 
             <button className="menu-trigger" onClick={() => setIsMenuOpen(true)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
