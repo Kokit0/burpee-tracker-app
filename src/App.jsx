@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './index.css';
 
 const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT44e0CJHeGd_n75F4wPQxt4JqOvyK7cQfMM8ZXK8xv7ldcqQOdCKXA5b7czGA5JDgUbPEt9sCNq6IG/pub?output=csv";
+const GOAL = 10000;
 
 const MONTH_NAMES = {
   "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
@@ -10,7 +11,6 @@ const MONTH_NAMES = {
 };
 
 function parseDate(dateStr) {
-  // Expecting DD-MM-YYYY or D/M/YYYY
   const parts = dateStr.trim().replace(/\//g, '-').split('-');
   if (parts.length === 3) {
     const dayNum = parts[0].padStart(2, '0');
@@ -20,20 +20,84 @@ function parseDate(dateStr) {
     return {
       raw: dateStr,
       monthYear: `${monthName} ${yearNum}`,
-      // For sorting: YYYYMMDD
-      sortKey: `${yearNum}${monthNum}${dayNum}`
+      sortKey: `${yearNum}${monthNum}${dayNum}`,
+      dayOnly: dayNum
     };
   }
-  return { raw: dateStr, monthYear: dateStr, sortKey: '0' };
+  return { raw: dateStr, monthYear: dateStr, sortKey: '0', dayOnly: dateStr };
+}
+
+function ProgressChart({ dailyHistory }) {
+  if (!dailyHistory || dailyHistory.length === 0) return null;
+
+  // Sort ascending for the chart (oldest to newest)
+  const sortedHistory = [...dailyHistory].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  
+  let runningTotal = 0;
+  const points = sortedHistory.map(day => {
+    runningTotal += day.total;
+    return {
+      dateStr: day.dateStr,
+      dayOnly: day.dayOnly,
+      dailyValue: day.total,
+      accumulated: runningTotal
+    };
+  });
+
+  const width = 1000; // Using a large viewbox for crisp scaling
+  const height = 400;
+  const paddingX = 40;
+  const paddingY = 60;
+  const innerWidth = width - paddingX * 2;
+  const innerHeight = height - paddingY * 2;
+
+  const dx = innerWidth / Math.max(1, points.length - 1);
+  const maxAccumulated = Math.max(GOAL, points[points.length - 1].accumulated);
+  const maxY = Math.max(GOAL, maxAccumulated * 1.1); // Add 10% padding above
+
+  const goalY = height - paddingY - (GOAL / maxY) * innerHeight;
+
+  const pathD = points.map((p, i) => {
+    const x = paddingX + i * dx;
+    const y = height - paddingY - (p.accumulated / maxY) * innerHeight;
+    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+  }).join(' ');
+
+  return (
+    <div className="chart-wrapper">
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
+        {/* Goal Line */}
+        <line x1={paddingX} y1={goalY} x2={width - paddingX} y2={goalY} stroke="var(--text-secondary)" strokeDasharray="8 8" strokeWidth="2" opacity="0.5" />
+        <text x={paddingX} y={goalY - 15} fill="var(--text-secondary)" fontSize="20" fontWeight="600" opacity="0.7">META {GOAL.toLocaleString()}</text>
+
+        {/* Progress Line */}
+        <path d={pathD} fill="none" stroke="var(--accent-color)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Points and Labels */}
+        {points.map((p, i) => {
+          const x = paddingX + i * dx;
+          const y = height - paddingY - (p.accumulated / maxY) * innerHeight;
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r="8" fill="var(--bg-color)" stroke="var(--accent-color)" strokeWidth="4" />
+              <text x={x} y={y - 25} fill="var(--text-primary)" fontSize="20" textAnchor="middle" fontWeight="bold">+{p.dailyValue}</text>
+              <text x={x} y={height - 20} fill="var(--text-secondary)" fontSize="18" textAnchor="middle">{p.dayOnly}</text>
+            </g>
+          )
+        })}
+      </svg>
+    </div>
+  );
 }
 
 function App() {
-  const [monthlyData, setMonthlyData] = useState([]);
-  const [dailyData, setDailyData] = useState([]);
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
+  const [allData, setAllData] = useState([]);
+  const [activeClass, setActiveClass] = useState('Hyrox'); // 'Hyrox' | 'Funcional'
+  const [activeExercise, setActiveExercise] = useState('Burpees'); // 'Burpees' | 'Squats'
   
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('monthly'); // 'monthly' or 'recent'
+  const [activeTab, setActiveTab] = useState('monthly'); // 'monthly' | 'recent'
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,54 +110,30 @@ function App() {
         const csvText = await response.text();
         
         const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-        // Skip header
-        const dataRows = lines[0].toLowerCase().includes('mes') || lines[0].toLowerCase().includes('fecha') ? lines.slice(1) : lines;
+        // Expecting: Fecha, Servicio, Burpees, Squats
+        const dataRows = lines[0].toLowerCase().includes('fecha') || lines[0].toLowerCase().includes('mes') ? lines.slice(1) : lines;
         
-        const rawDaily = {};
-        const rawMonthly = {};
-
+        const parsed = [];
         dataRows.forEach(row => {
           const parts = row.split(',');
-          const rawDate = parts[0].trim();
-          
-          const burpeesStr = parts.slice(1).join(',').replace(/"/g, '').replace(/,/g, '').trim();
-          const burpeesNumber = parseInt(burpeesStr, 10);
+          const rawDate = parts[0] ? parts[0].trim() : '';
+          const serviceStr = parts[1] ? parts[1].trim() : '';
+          const burpeesStr = parts[2] ? parts[2].replace(/"/g, '').replace(/,/g, '').trim() : '0';
+          const squatsStr = parts[3] ? parts[3].replace(/"/g, '').replace(/,/g, '').trim() : '0';
 
-          if (rawDate && !isNaN(burpeesNumber)) {
-            const parsed = parseDate(rawDate);
-            
-            // 1. Agrupar por Día (Suma de múltiples clases en el mismo día)
-            if (!rawDaily[parsed.raw]) {
-              rawDaily[parsed.raw] = { dateStr: parsed.raw, sortKey: parsed.sortKey, monthYear: parsed.monthYear, total: 0 };
-            }
-            rawDaily[parsed.raw].total += burpeesNumber;
-
-            // 2. Agrupar por Mes
-            if (!rawMonthly[parsed.monthYear]) {
-              rawMonthly[parsed.monthYear] = { monthYear: parsed.monthYear, sortKey: parsed.sortKey.substring(0, 6), total: 0, latestSession: null };
-            }
-            rawMonthly[parsed.monthYear].total += burpeesNumber;
-            
-            // Determinar la última sesión de ese mes
-            const currentLatest = rawMonthly[parsed.monthYear].latestSession;
-            if (!currentLatest || parsed.sortKey > currentLatest.sortKey) {
-              rawMonthly[parsed.monthYear].latestSession = { dateStr: parsed.raw, burpees: rawDaily[parsed.raw].total, sortKey: parsed.sortKey };
-            } else if (parsed.sortKey === currentLatest.sortKey) {
-              // Actualizamos el total de la última sesión porque sumamos los diarios
-              rawMonthly[parsed.monthYear].latestSession.burpees = rawDaily[parsed.raw].total;
-            }
+          if (rawDate) {
+            parsed.push({
+              dateObj: parseDate(rawDate),
+              servicio: serviceStr.toLowerCase().includes('funcional') ? 'Funcional' : 'Hyrox',
+              burpees: parseInt(burpeesStr, 10) || 0,
+              squats: parseInt(squatsStr, 10) || 0
+            });
           }
         });
 
-        const sortedDaily = Object.values(rawDaily).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
-        const sortedMonthly = Object.values(rawMonthly).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
-
-        if (sortedMonthly.length === 0) {
-          throw new Error('La hoja está vacía o las fechas no están en formato DD-MM-YYYY.');
-        }
-
-        setDailyData(sortedDaily);
-        setMonthlyData(sortedMonthly);
+        if (parsed.length === 0) throw new Error('La hoja está vacía o el formato no es válido.');
+        
+        setAllData(parsed);
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -104,13 +144,58 @@ function App() {
     fetchData();
   }, []);
 
-  const currentMonthData = monthlyData[currentMonthIndex] || { monthYear: "---", total: 0, latestSession: null };
+  // Filter and Aggregate Data based on current selection
+  const filteredData = allData.filter(d => d.servicio === activeClass);
+  
+  const rawDaily = {};
+  filteredData.forEach(d => {
+    const exValue = activeExercise === 'Burpees' ? d.burpees : d.squats;
+    if (exValue === 0) return;
+    
+    if (!rawDaily[d.dateObj.raw]) {
+      rawDaily[d.dateObj.raw] = { 
+        dateStr: d.dateObj.raw, 
+        sortKey: d.dateObj.sortKey, 
+        monthYear: d.dateObj.monthYear, 
+        dayOnly: d.dateObj.dayOnly,
+        total: 0 
+      };
+    }
+    rawDaily[d.dateObj.raw].total += exValue;
+  });
+
+  const rawMonthly = {};
+  Object.values(rawDaily).forEach(daily => {
+    if (!rawMonthly[daily.monthYear]) {
+      rawMonthly[daily.monthYear] = { 
+        monthYear: daily.monthYear, 
+        sortKey: daily.sortKey.substring(0, 6), 
+        total: 0, 
+        latestSession: null,
+        dailyHistory: []
+      };
+    }
+    rawMonthly[daily.monthYear].total += daily.total;
+    rawMonthly[daily.monthYear].dailyHistory.push(daily);
+    
+    const currentLatest = rawMonthly[daily.monthYear].latestSession;
+    if (!currentLatest || daily.sortKey > currentLatest.sortKey) {
+      rawMonthly[daily.monthYear].latestSession = { dateStr: daily.dateStr, value: daily.total, sortKey: daily.sortKey };
+    }
+  });
+
+  const monthlyData = Object.values(rawMonthly).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+  const dailyData = Object.values(rawDaily).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+
+  // Ensure current index is valid
+  const safeMonthIndex = Math.min(currentMonthIndex, Math.max(0, monthlyData.length - 1));
+  const currentMonthObj = monthlyData[safeMonthIndex] || { monthYear: "---", total: 0, latestSession: null, dailyHistory: [] };
 
   if (loading) {
     return (
       <div className="app-container">
         <div className="loading-spinner"></div>
-        <p className="label">Cargando Burpees...</p>
+        <p className="label">Cargando NuFitness...</p>
       </div>
     );
   }
@@ -126,26 +211,37 @@ function App() {
         </header>
 
         {error ? (
-          <div className="error-message">
-            {error}
-          </div>
+          <div className="error-message">{error}</div>
         ) : (
-          <>
+          <div className="main-content">
+            {/* Top Navigation */}
+            <div className="nav-level-1">
+              <button className={`nav-btn ${activeClass === 'Hyrox' ? 'active' : ''}`} onClick={() => {setActiveClass('Hyrox'); setCurrentMonthIndex(0);}}>HYROX</button>
+              <button className={`nav-btn ${activeClass === 'Funcional' ? 'active' : ''}`} onClick={() => {setActiveClass('Funcional'); setCurrentMonthIndex(0);}}>FUNCIONAL</button>
+            </div>
+            
+            <div className="nav-level-2">
+              <button className={`nav-btn-sm ${activeExercise === 'Burpees' ? 'active' : ''}`} onClick={() => {setActiveExercise('Burpees'); setCurrentMonthIndex(0);}}>Burpees</button>
+              <button className={`nav-btn-sm ${activeExercise === 'Squats' ? 'active' : ''}`} onClick={() => {setActiveExercise('Squats'); setCurrentMonthIndex(0);}}>Squats</button>
+            </div>
+
             <div className="counter-wrapper">
               <p className="label">Total del Grupo</p>
-              <h1 className="counter-value">{currentMonthData.total.toLocaleString('en-US')}</h1>
-              <h2 className="month-display">{currentMonthData.monthYear}</h2>
-              {currentMonthData.latestSession && (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '-24px', fontWeight: '500' }}>
-                  Última sesión: {currentMonthData.latestSession.burpees} burpees ({currentMonthData.latestSession.dateStr})
+              <h1 className="counter-value">
+                {currentMonthObj.total.toLocaleString('en-US')}
+                <span className="goal-text"> / {GOAL.toLocaleString('en-US')}</span>
+              </h1>
+              <h2 className="month-display">{currentMonthObj.monthYear}</h2>
+              {currentMonthObj.latestSession && (
+                <p className="latest-session-text">
+                  Última sesión: {currentMonthObj.latestSession.value} {activeExercise.toLowerCase()} ({currentMonthObj.latestSession.dateStr})
                 </p>
               )}
             </div>
 
-            <button 
-              className="menu-trigger" 
-              onClick={() => setIsMenuOpen(true)}
-            >
+            <ProgressChart dailyHistory={currentMonthObj.dailyHistory} />
+
+            <button className="menu-trigger" onClick={() => setIsMenuOpen(true)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -154,19 +250,16 @@ function App() {
               </svg>
               Historial
             </button>
-          </>
+          </div>
         )}
       </div>
 
       {/* Bottom Sheet Menu */}
-      <div 
-        className={`overlay ${isMenuOpen ? 'open' : ''}`} 
-        onClick={() => setIsMenuOpen(false)}
-      ></div>
+      <div className={`overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
       
       <div className={`bottom-sheet ${isMenuOpen ? 'open' : ''}`}>
         <div className="sheet-header" style={{ marginBottom: '16px' }}>
-          <h3 className="sheet-title">Historial</h3>
+          <h3 className="sheet-title">Historial ({activeClass} - {activeExercise})</h3>
           <button className="close-btn" onClick={() => setIsMenuOpen(false)}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -176,18 +269,8 @@ function App() {
         </div>
 
         <div className="tabs-container">
-          <button 
-            className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`}
-            onClick={() => setActiveTab('monthly')}
-          >
-            Resumen Mensual
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`}
-            onClick={() => setActiveTab('recent')}
-          >
-            Últimas Clases
-          </button>
+          <button className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`} onClick={() => setActiveTab('monthly')}>Resumen Mensual</button>
+          <button className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>Últimas Clases</button>
         </div>
         
         <ul className="month-list">
@@ -195,7 +278,7 @@ function App() {
             monthlyData.map((item, index) => (
               <li key={index} className="month-item">
                 <button 
-                  className={`month-btn ${currentMonthIndex === index ? 'active' : ''}`}
+                  className={`month-btn ${safeMonthIndex === index ? 'active' : ''}`}
                   onClick={() => {
                     setCurrentMonthIndex(index);
                     setIsMenuOpen(false);
@@ -215,6 +298,9 @@ function App() {
                 </div>
               </li>
             ))
+          )}
+          {monthlyData.length === 0 && (
+            <p style={{textAlign: 'center', color: 'var(--text-secondary)', padding: '20px'}}>No hay datos registrados aún.</p>
           )}
         </ul>
       </div>
