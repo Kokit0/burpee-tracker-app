@@ -317,3 +317,36 @@ body {
   animation: spin 1s cubic-bezier(0.68, -0.55, 0.26, 1.55) infinite;
   margin-bottom: 24px;
 }
+
+.tabs-container {
+  display: flex;
+  background-color: var(--bg-color);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 12px;
+  border-radius: calc(var(--radius-md) - 4px);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  background-color: var(--surface-hover);
+  color: var(--accent-color);
+  box-shadow: var(--shadow-sm);
+}
