@@ -13,9 +13,21 @@ const MONTH_NAMES = {
 function parseDate(dateStr) {
   const parts = dateStr.trim().replace(/\//g, '-').split('-');
   if (parts.length === 3) {
-    const dayNum = parts[0].padStart(2, '0');
-    const monthNum = parts[1].padStart(2, '0');
-    const yearNum = parts[2];
+    let yearNum, monthNum, dayNum;
+    
+    // Check if the first part is a 4-digit year (YYYY-MM-DD)
+    if (parts[0].length === 4) {
+      yearNum = parts[0];
+      monthNum = parts[1].padStart(2, '0');
+      dayNum = parts[2].padStart(2, '0');
+    } else {
+      // Assume DD-MM-YYYY
+      dayNum = parts[0].padStart(2, '0');
+      monthNum = parts[1].padStart(2, '0');
+      yearNum = parts[2];
+      if (yearNum.length === 2) yearNum = "20" + yearNum;
+    }
+
     const monthName = MONTH_NAMES[monthNum] || `Mes ${monthNum}`;
     return {
       raw: dateStr,
