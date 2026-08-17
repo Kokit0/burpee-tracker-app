@@ -1,54 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;800;900&display=swap');
 
 :root {
-  --bg-color: hsl(0, 0%, 98%);
-  --surface-color: hsl(0, 0%, 100%);
-  --text-primary: hsl(0, 0%, 10%);
-  --text-secondary: hsl(0, 0%, 40%);
-  --accent-color: hsl(12, 90%, 55%);
-  --accent-hover: hsl(12, 90%, 45%);
-  --border-color: hsl(0, 0%, 90%);
+  --bg-color: #050505;
+  --surface-color: #121212;
+  --surface-hover: #1a1a1a;
+  --text-primary: #FFFFFF;
+  --text-secondary: #888888;
+  --accent-color: #FF4D00; /* Energetic Orange */
+  --accent-glow: rgba(255, 77, 0, 0.3);
+  --border-color: #222222;
   
-  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
-  --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
-  --shadow-lg: 0 24px 48px rgba(0,0,0,0.12);
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 40px var(--accent-glow);
   
-  --radius-md: 12px;
-  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-lg: 32px;
   --radius-full: 9999px;
   
   --transition-fast: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-normal: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color: hsl(0, 0%, 6%);
-    --surface-color: hsl(0, 0%, 10%);
-    --text-primary: hsl(0, 0%, 95%);
-    --text-secondary: hsl(0, 0%, 60%);
-    --border-color: hsl(0, 0%, 15%);
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
-    --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
-    --shadow-lg: 0 24px 48px rgba(0,0,0,0.6);
-  }
-}
-
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: var(--bg-color);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   min-height: 100vh;
-  min-height: 100dvh; /* For mobile browsers */
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -57,10 +45,10 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
-  max-width: 600px;
+  max-width: 500px;
   margin: 0 auto;
   width: 100%;
-  padding: 24px;
+  padding: 32px 24px;
   position: relative;
 }
 
@@ -72,27 +60,35 @@ body {
   justify-content: center;
   flex: 1;
   text-align: center;
-  animation: fadeIn var(--transition-normal);
+  animation: fadeScale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Logo */
-.logo-container {
-  margin-bottom: 32px;
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-md);
-  background-color: var(--surface-color);
-  border: 1px solid var(--border-color);
+/* Brand Header */
+.brand-header {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  right: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-sm);
+  gap: 12px;
 }
 
-.logo-container svg {
-  width: 32px;
-  height: 32px;
+.brand-icon {
+  width: 28px;
+  height: 28px;
   color: var(--accent-color);
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+
+.brand-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-transform: uppercase;
 }
 
 /* Typography */
@@ -100,24 +96,25 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
+  letter-spacing: 0.1em;
+  color: var(--accent-color);
+  margin-bottom: 16px;
 }
 
 .counter-value {
-  font-size: 5rem;
-  font-weight: 800;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 6rem;
+  font-weight: 900;
   line-height: 1;
   letter-spacing: -0.04em;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
+  text-shadow: var(--shadow-glow);
 }
 
 @media (max-width: 400px) {
   .counter-value {
-    font-size: 4rem;
+    font-size: 4.5rem;
   }
 }
 
@@ -128,40 +125,64 @@ body {
   margin-bottom: 48px;
 }
 
+/* Circular Background Behind Counter */
+.counter-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 32px 0;
+  padding: 48px;
+}
+
+.counter-wrapper::before {
+  content: '';
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--surface-color) 0%, transparent 70%);
+  z-index: -1;
+  opacity: 0.8;
+}
+
 /* Button */
 .menu-trigger {
   background-color: var(--surface-color);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  padding: 12px 24px;
+  padding: 16px 32px;
   border-radius: var(--radius-full);
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   transition: all var(--transition-fast);
   box-shadow: var(--shadow-sm);
   font-family: inherit;
+  margin-top: auto;
 }
 
 .menu-trigger:hover {
-  background-color: var(--bg-color);
+  background-color: var(--surface-hover);
   border-color: var(--text-secondary);
+  transform: translateY(-2px);
 }
 
 .menu-trigger:active {
   transform: scale(0.96);
 }
 
-/* Bottom Sheet / Modal */
+/* Bottom Sheet */
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0,0,0,0.4);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background-color: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 40;
   opacity: 0;
   pointer-events: none;
@@ -181,15 +202,14 @@ body {
   background-color: var(--surface-color);
   border-top-left-radius: var(--radius-lg);
   border-top-right-radius: var(--radius-lg);
-  padding: 32px 24px;
+  padding: 32px 24px 48px;
   z-index: 50;
   transform: translateY(100%);
   transition: transform var(--transition-normal);
-  box-shadow: var(--shadow-lg);
-  max-height: 80vh;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.8);
+  max-height: 85vh;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  border-top: 1px solid var(--border-color);
 }
 
 .bottom-sheet.open {
@@ -200,38 +220,39 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 }
 
 .sheet-title {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
 .close-btn {
-  background: transparent;
-  border: none;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
   color: var(--text-secondary);
   cursor: pointer;
-  padding: 8px;
+  padding: 10px;
   border-radius: var(--radius-full);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .close-btn:hover {
-  background-color: var(--bg-color);
-  color: var(--text-primary);
+  background-color: var(--text-primary);
+  color: var(--bg-color);
 }
 
 .month-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .month-item {
@@ -240,13 +261,13 @@ body {
 
 .month-btn {
   width: 100%;
-  background: transparent;
-  border: 1px solid transparent;
-  padding: 16px;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  padding: 20px 24px;
   border-radius: var(--radius-md);
   text-align: left;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.0625rem;
+  font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
@@ -257,59 +278,42 @@ body {
 }
 
 .month-btn:hover {
-  background-color: var(--bg-color);
+  background-color: var(--surface-hover);
+  border-color: var(--text-secondary);
 }
 
 .month-btn.active {
-  background-color: var(--bg-color);
+  background-color: rgba(255, 77, 0, 0.1);
   border-color: var(--accent-color);
-  color: var(--accent-color);
 }
 
 .month-btn-value {
-  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
   color: var(--text-secondary);
+  font-size: 1.25rem;
 }
 
 .month-btn.active .month-btn-value {
   color: var(--accent-color);
 }
 
-/* Loading state */
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border-color);
-  border-top-color: var(--accent-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 24px;
-}
-
-.error-message {
-  color: hsl(0, 80%, 50%);
-  background-color: hsl(0, 80%, 95%);
-  padding: 16px;
-  border-radius: var(--radius-md);
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-top: 24px;
-  max-width: 100%;
-}
-
-@media (prefers-color-scheme: dark) {
-  .error-message {
-    background-color: hsl(0, 80%, 15%);
-    color: hsl(0, 80%, 80%);
-  }
-}
-
 /* Animations */
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s cubic-bezier(0.68, -0.55, 0.26, 1.55) infinite;
+  margin-bottom: 24px;
 }
