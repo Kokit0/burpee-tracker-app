@@ -10,17 +10,18 @@ const MONTH_NAMES = {
 };
 
 function parseDate(dateStr) {
-  // Expecting DD-MM-YYYY
-  const parts = dateStr.trim().split('-');
+  // Expecting DD-MM-YYYY or D/M/YYYY
+  const parts = dateStr.trim().replace(/\//g, '-').split('-');
   if (parts.length === 3) {
-    const monthNum = parts[1];
+    const dayNum = parts[0].padStart(2, '0');
+    const monthNum = parts[1].padStart(2, '0');
     const yearNum = parts[2];
     const monthName = MONTH_NAMES[monthNum] || `Mes ${monthNum}`;
     return {
       raw: dateStr,
       monthYear: `${monthName} ${yearNum}`,
       // For sorting: YYYYMMDD
-      sortKey: `${yearNum}${monthNum}${parts[0].padStart(2, '0')}`
+      sortKey: `${yearNum}${monthNum}${dayNum}`
     };
   }
   return { raw: dateStr, monthYear: dateStr, sortKey: '0' };
