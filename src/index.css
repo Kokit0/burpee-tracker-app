@@ -85,7 +85,7 @@ body {
 .brand-name {
   font-family: 'Montserrat', sans-serif;
   font-weight: 800;
-  font-size: 2.8rem;
+  font-size: clamp(1.5rem, 8vw, 2.8rem);
   letter-spacing: 1px;
   color: var(--text-primary);
 }
@@ -94,6 +94,8 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  align-items: center;
 }
 
 /* Typography */
