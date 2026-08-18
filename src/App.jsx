@@ -162,6 +162,7 @@ function App() {
       const serviceIdx = headers.findIndex(h => h.includes('servicio') || h.includes('clase'));
       const burpeesIdx = headers.findIndex(h => h.includes('burpees'));
       const squatsIdx = headers.findIndex(h => h.includes('squats'));
+      const userIdx = headers.findIndex(h => h.includes('usuario'));
       
       const parsed = [];
       datosData.slice(1).forEach(row => {
@@ -169,13 +170,15 @@ function App() {
         const serviceStr = serviceIdx >= 0 && row[serviceIdx] ? row[serviceIdx].toString().trim() : '';
         const burpeesStr = burpeesIdx >= 0 && row[burpeesIdx] ? row[burpeesIdx].toString().replace(/"/g, '').replace(/,/g, '').trim() : '0';
         const squatsStr = squatsIdx >= 0 && row[squatsIdx] ? row[squatsIdx].toString().replace(/"/g, '').replace(/,/g, '').trim() : '0';
+        const userStr = userIdx >= 0 && row[userIdx] ? row[userIdx].toString().trim() : '';
 
         if (rawDate) {
           parsed.push({
             dateObj: parseDate(rawDate),
             servicio: serviceStr.toLowerCase().includes('funcional') ? 'Funcional' : 'Hyrox',
             burpees: parseInt(burpeesStr, 10) || 0,
-            squats: parseInt(squatsStr, 10) || 0
+            squats: parseInt(squatsStr, 10) || 0,
+            usuario: userStr
           });
         }
       });
@@ -248,7 +251,19 @@ function App() {
   });
 
   const monthlyData = Object.values(rawMonthly).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
-  const dailyData = Object.values(rawDaily).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+  
+  // Individual entries for 'recent' tab
+  const recentEntries = [...filteredData]
+    .filter(d => (activeExercise === 'Burpees' ? d.burpees : d.squats) > 0)
+    .sort((a, b) => {
+       // Primary sort by date desc
+       const dateDiff = b.dateObj.sortKey.localeCompare(a.dateObj.sortKey);
+       if(dateDiff !== 0) return dateDiff;
+       // If same date, sort by value to group logically
+       const valA = activeExercise === 'Burpees' ? a.burpees : a.squats;
+       const valB = activeExercise === 'Burpees' ? b.burpees : b.squats;
+       return valB - valA;
+    });
 
   const safeMonthIndex = Math.min(currentMonthIndex, Math.max(0, monthlyData.length - 1));
   const currentMonthObj = monthlyData[safeMonthIndex] || { monthYear: "---", total: 0, latestSession: null, dailyHistory: [] };
@@ -356,7 +371,7 @@ function App() {
 
         <div className="tabs-container">
           <button className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`} onClick={() => setActiveTab('monthly')}>Resumen Mensual</button>
-          <button className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>Últimas Clases</button>
+          <button className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>Últimos Registros</button>
         </div>
         
         <ul className="month-list">
@@ -376,14 +391,25 @@ function App() {
               </li>
             ))
           ) : (
-            dailyData.map((item, index) => (
-              <li key={index} className="month-item">
-                <div className="month-btn" style={{ cursor: 'default' }}>
-                  <span>{item.dateStr}</span>
-                  <span className="month-btn-value">{item.total.toLocaleString('en-US')}</span>
-                </div>
-              </li>
-            ))
+            recentEntries.map((item, index) => {
+              const val = activeExercise === 'Burpees' ? item.burpees : item.squats;
+              const isPersonal = item.usuario && item.usuario.toLowerCase() !== 'admin';
+              return (
+                <li key={index} className="month-item">
+                  <div className="month-btn" style={{ cursor: 'default', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '16px 24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                      <span>{item.dateObj.raw}</span>
+                      <span className="month-btn-value">{val.toLocaleString('en-US')}</span>
+                    </div>
+                    {isPersonal && (
+                      <span style={{ fontSize: '0.85rem', color: 'var(--accent-color)', marginTop: '4px', fontWeight: 'bold' }}>
+                        👤 Aporte de: {item.usuario}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })
           )}
         </ul>
       </div>
