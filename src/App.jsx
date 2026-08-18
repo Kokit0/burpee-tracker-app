@@ -156,7 +156,7 @@ function App() {
       setGoals(parsedGoals);
 
       const datosData = json.data.datos;
-      if (!datosData || datosData.length < 2) throw new Error('La hoja estÃ¡ vacÃ­a o cargando.');
+      if (!datosData || datosData.length < 2) throw new Error('La hoja está vacía o cargando.');
 
       const headers = datosData[0].map(h => h.toString().toLowerCase());
       const dateIdx = headers.findIndex(h => h.includes('fecha') || h.includes('mes'));
@@ -184,7 +184,7 @@ function App() {
         }
       });
 
-      if (parsed.length === 0) throw new Error('No se encontraron datos histÃ³ricos vÃ¡lidos.');
+      if (parsed.length === 0) throw new Error('No se encontraron datos históricos válidos.');
       
       setAllData(parsed);
       setLoading(false);
@@ -204,7 +204,6 @@ function App() {
 
   useEffect(() => {
     fetchAppData();
-    fetchUsersList();
   }, []);
 
   const handleLogout = () => {
@@ -293,7 +292,7 @@ function App() {
             <button 
               onClick={() => setShowStats(true)}
               style={{ position: 'absolute', right: '0', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '8px' }}
-              title="Mis EstadÃ­sticas"
+              title="Mis Estadísticas"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
             </button>
@@ -323,7 +322,7 @@ function App() {
               <h2 className="month-display">{currentMonthObj.monthYear}</h2>
               {currentMonthObj.latestSession && (
                 <p className="latest-session-text">
-                  Ãšltima sesiÃ³n: {currentMonthObj.latestSession.value} {activeExercise.toLowerCase()} ({currentMonthObj.latestSession.dateStr})
+                  Última sesión: {currentMonthObj.latestSession.value} {activeExercise.toLowerCase()} ({currentMonthObj.latestSession.dateStr})
                 </p>
               )}
             </div>
@@ -343,7 +342,7 @@ function App() {
               
               {currentUser ? (
                 <>
-                  <button className="menu-trigger" style={{color: 'var(--accent-color)', borderColor: 'var(--accent-color)'}} onClick={() => {if(window.confirm('Â¿Cerrar sesiÃ³n?')) handleLogout()}}>
+                  <button className="menu-trigger" style={{color: 'var(--accent-color)', borderColor: 'var(--accent-color)'}} onClick={() => {if(window.confirm('¿Cerrar sesión?')) handleLogout()}}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     {currentUser}
                   </button>
@@ -356,7 +355,7 @@ function App() {
                   </button>
                 </>
               ) : (
-                <button className="menu-trigger primary-action" style={{backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}} onClick={() => setShowLogin(true)}>
+                <button className="menu-trigger primary-action" style={{backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}} onClick={() => { setShowLogin(true); if(usersList.length === 0) fetchUsersList(); }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
                   Entrar
                 </button>
@@ -381,7 +380,7 @@ function App() {
 
         <div className="tabs-container">
           <button className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`} onClick={() => setActiveTab('monthly')}>Resumen Mensual</button>
-          <button className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>Ãšltimos Registros</button>
+          <button className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>Últimos Registros</button>
         </div>
         
         <ul className="month-list">
@@ -413,7 +412,7 @@ function App() {
                     </div>
                     {isPersonal && (
                       <span style={{ fontSize: '0.85rem', color: 'var(--accent-color)', marginTop: '4px', fontWeight: 'bold' }}>
-                        ðŸ‘¤ Aporte de: {item.usuario}
+                         Aporte de: {item.usuario}
                       </span>
                     )}
                   </div>
@@ -483,7 +482,7 @@ function LoginModal({ usersList, onClose, onLogin }) {
         setError(json.message);
       }
     } catch(err) {
-      setError('Error de conexiÃ³n');
+      setError('Error de conexión');
     }
     setLoading(false);
   };
@@ -491,9 +490,9 @@ function LoginModal({ usersList, onClose, onLogin }) {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2>AutenticaciÃ³n</h2>
+        <h2>Autenticación</h2>
         <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>
-          Ingresa para sumar al rÃ©cord grupal. Si tu nombre no existe, se crearÃ¡ automÃ¡ticamente con tu contraseÃ±a.
+          Ingresa para sumar al récord grupal. Si tu nombre no existe, se creará automáticamente con tu contraseña.
         </p>
         <form onSubmit={handleSubmit} className="modal-form" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
           <input 
@@ -512,7 +511,7 @@ function LoginModal({ usersList, onClose, onLogin }) {
             type="password" 
             value={password} 
             onChange={e=>setPassword(e.target.value)} 
-            placeholder="ContraseÃ±a" 
+            placeholder="Contraseña" 
             className="modal-input"
             required
           />
@@ -563,7 +562,7 @@ function AddModal({ currentUser, activeClass, onClose, onAdded }) {
         alert(json.message);
       }
     } catch(err) {
-      alert('Error de conexiÃ³n');
+      alert('Error de conexión');
     }
     setLoading(false);
   };
@@ -572,7 +571,7 @@ function AddModal({ currentUser, activeClass, onClose, onAdded }) {
     <div className="modal-overlay">
       <div className="modal-content">
         <h2>Registrar Aporte</h2>
-        <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>Agrega tus nÃºmeros para empujar la meta grupal. Â¡Todo suma!</p>
+        <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>Agrega tus números para empujar la meta grupal. ¡Todo suma!</p>
         <form onSubmit={handleSubmit} className="modal-form" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
           <div>
             <label className="modal-label" style={{display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontWeight: 'bold'}}>Fecha</label>
@@ -678,7 +677,7 @@ function StatsModal({ currentUser, allData, onClose }) {
         
         <div style={{textAlign: 'center', marginTop: '32px'}}>
           <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>
-            💪 ¡Sigue sumando, {currentUser}!
+             ¡Sigue sumando, {currentUser}!
           </p>
         </div>
       </div>
