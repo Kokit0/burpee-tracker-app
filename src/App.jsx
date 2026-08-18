@@ -107,6 +107,7 @@ const ProgressChart = ({ dailyHistory, currentGoal }) => {
 
 function App() {
   const [allData, setAllData] = useState([]);
+  const [showStats, setShowStats] = useState(false);
   const [goals, setGoals] = useState({
     'Hyrox': { 'Burpees': 10000, 'Squats': 10000 },
     'Funcional': { 'Burpees': 10000, 'Squats': 10000 }
@@ -155,7 +156,7 @@ function App() {
       setGoals(parsedGoals);
 
       const datosData = json.data.datos;
-      if (!datosData || datosData.length < 2) throw new Error('La hoja está vacía o cargando.');
+      if (!datosData || datosData.length < 2) throw new Error('La hoja estÃ¡ vacÃ­a o cargando.');
 
       const headers = datosData[0].map(h => h.toString().toLowerCase());
       const dateIdx = headers.findIndex(h => h.includes('fecha') || h.includes('mes'));
@@ -183,7 +184,7 @@ function App() {
         }
       });
 
-      if (parsed.length === 0) throw new Error('No se encontraron datos históricos válidos.');
+      if (parsed.length === 0) throw new Error('No se encontraron datos histÃ³ricos vÃ¡lidos.');
       
       setAllData(parsed);
       setLoading(false);
@@ -281,13 +282,22 @@ function App() {
   return (
     <>
       <div className="app-container">
-        <header className="brand-header" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <header className="brand-header" style={{ position: 'relative', display: 'flex', justifyContent: 'center', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <svg className="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"></path>
             </svg>
             <span className="brand-name">NuFitness</span>
           </div>
+          {currentUser && (
+            <button 
+              onClick={() => setShowStats(true)}
+              style={{ position: 'absolute', right: '0', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '8px' }}
+              title="Mis EstadÃ­sticas"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </button>
+          )}
         </header>
 
         {error ? (
@@ -313,7 +323,7 @@ function App() {
               <h2 className="month-display">{currentMonthObj.monthYear}</h2>
               {currentMonthObj.latestSession && (
                 <p className="latest-session-text">
-                  Última sesión: {currentMonthObj.latestSession.value} {activeExercise.toLowerCase()} ({currentMonthObj.latestSession.dateStr})
+                  Ãšltima sesiÃ³n: {currentMonthObj.latestSession.value} {activeExercise.toLowerCase()} ({currentMonthObj.latestSession.dateStr})
                 </p>
               )}
             </div>
@@ -333,7 +343,7 @@ function App() {
               
               {currentUser ? (
                 <>
-                  <button className="menu-trigger" style={{color: 'var(--accent-color)', borderColor: 'var(--accent-color)'}} onClick={() => {if(window.confirm('¿Cerrar sesión?')) handleLogout()}}>
+                  <button className="menu-trigger" style={{color: 'var(--accent-color)', borderColor: 'var(--accent-color)'}} onClick={() => {if(window.confirm('Â¿Cerrar sesiÃ³n?')) handleLogout()}}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     {currentUser}
                   </button>
@@ -371,7 +381,7 @@ function App() {
 
         <div className="tabs-container">
           <button className={`tab-btn ${activeTab === 'monthly' ? 'active' : ''}`} onClick={() => setActiveTab('monthly')}>Resumen Mensual</button>
-          <button className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>Últimos Registros</button>
+          <button className={`tab-btn ${activeTab === 'recent' ? 'active' : ''}`} onClick={() => setActiveTab('recent')}>Ãšltimos Registros</button>
         </div>
         
         <ul className="month-list">
@@ -403,7 +413,7 @@ function App() {
                     </div>
                     {isPersonal && (
                       <span style={{ fontSize: '0.85rem', color: 'var(--accent-color)', marginTop: '4px', fontWeight: 'bold' }}>
-                        👤 Aporte de: {item.usuario}
+                        ðŸ‘¤ Aporte de: {item.usuario}
                       </span>
                     )}
                   </div>
@@ -438,6 +448,14 @@ function App() {
           }}
         />
       )}
+      {/* Stats Modal */}
+      {showStats && (
+        <StatsModal 
+          currentUser={currentUser}
+          allData={allData}
+          onClose={() => setShowStats(false)}
+        />
+      )}
     </>
   );
 }
@@ -465,7 +483,7 @@ function LoginModal({ usersList, onClose, onLogin }) {
         setError(json.message);
       }
     } catch(err) {
-      setError('Error de conexión');
+      setError('Error de conexiÃ³n');
     }
     setLoading(false);
   };
@@ -473,9 +491,9 @@ function LoginModal({ usersList, onClose, onLogin }) {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2>Autenticación</h2>
+        <h2>AutenticaciÃ³n</h2>
         <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>
-          Ingresa para sumar al récord grupal. Si tu nombre no existe, se creará automáticamente con tu contraseña.
+          Ingresa para sumar al rÃ©cord grupal. Si tu nombre no existe, se crearÃ¡ automÃ¡ticamente con tu contraseÃ±a.
         </p>
         <form onSubmit={handleSubmit} className="modal-form" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
           <input 
@@ -494,7 +512,7 @@ function LoginModal({ usersList, onClose, onLogin }) {
             type="password" 
             value={password} 
             onChange={e=>setPassword(e.target.value)} 
-            placeholder="Contraseña" 
+            placeholder="ContraseÃ±a" 
             className="modal-input"
             required
           />
@@ -545,7 +563,7 @@ function AddModal({ currentUser, activeClass, onClose, onAdded }) {
         alert(json.message);
       }
     } catch(err) {
-      alert('Error de conexión');
+      alert('Error de conexiÃ³n');
     }
     setLoading(false);
   };
@@ -554,7 +572,7 @@ function AddModal({ currentUser, activeClass, onClose, onAdded }) {
     <div className="modal-overlay">
       <div className="modal-content">
         <h2>Registrar Aporte</h2>
-        <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>Agrega tus números para empujar la meta grupal. ¡Todo suma!</p>
+        <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>Agrega tus nÃºmeros para empujar la meta grupal. Â¡Todo suma!</p>
         <form onSubmit={handleSubmit} className="modal-form" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
           <div>
             <label className="modal-label" style={{display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontWeight: 'bold'}}>Fecha</label>
@@ -592,4 +610,81 @@ function AddModal({ currentUser, activeClass, onClose, onAdded }) {
   );
 }
 
+function StatsModal({ currentUser, allData, onClose }) {
+  const [activeTab, setActiveTab] = useState('Burpees');
+  
+  const now = new Date();
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentYear = now.getFullYear().toString();
+
+  let totalMonth = 0;
+  let totalYear = 0;
+  let totalAllTime = 0;
+
+  allData.forEach(d => {
+    if (!d.usuario || d.usuario.toLowerCase() !== currentUser.toLowerCase()) return;
+    
+    const val = activeTab === 'Burpees' ? d.burpees : d.squats;
+    if (val === 0) return;
+
+    totalAllTime += val;
+    
+    if (d.dateObj && d.dateObj.sortKey) {
+      const yearStr = d.dateObj.sortKey.substring(0, 4);
+      const monthKey = d.dateObj.sortKey.substring(0, 7);
+
+      if (yearStr === currentYear) {
+        totalYear += val;
+      }
+      if (monthKey === currentMonthKey) {
+        totalMonth += val;
+      }
+    }
+  });
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content" style={{maxWidth: '400px', padding: '24px'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px'}}>
+          <h2 style={{margin: 0, fontSize: '1.5rem'}}>Mis Estadísticas</h2>
+          <button onClick={onClose} style={{background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer'}}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        
+        <div className="tabs-container" style={{marginBottom: '32px'}}>
+          <button className={`tab-btn ${activeTab === 'Burpees' ? 'active' : ''}`} onClick={() => setActiveTab('Burpees')}>Burpees</button>
+          <button className={`tab-btn ${activeTab === 'Squats' ? 'active' : ''}`} onClick={() => setActiveTab('Squats')}>Squats</button>
+        </div>
+
+        <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px'}}>
+          <div style={{textAlign: 'center'}}>
+            <p className="label" style={{marginBottom: '8px'}}>{activeTab} este mes</p>
+            <div style={{fontSize: '4.5rem', fontWeight: '900', color: 'var(--text-primary)', lineHeight: '1'}}>{totalMonth.toLocaleString('en-US')}</div>
+          </div>
+          
+          <div style={{display: 'flex', width: '100%', gap: '16px', marginTop: '16px'}}>
+            <div style={{flex: 1, backgroundColor: 'var(--bg-color)', padding: '16px', borderRadius: 'var(--radius-md)', textAlign: 'center', border: '1px solid var(--border-color)'}}>
+              <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: '600'}}>{activeTab} este año</p>
+              <div style={{fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-color)'}}>{totalYear.toLocaleString('en-US')}</div>
+            </div>
+            
+            <div style={{flex: 1, backgroundColor: 'var(--bg-color)', padding: '16px', borderRadius: 'var(--radius-md)', textAlign: 'center', border: '1px solid var(--border-color)'}}>
+              <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: '600'}}>Total Histórico</p>
+              <div style={{fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-color)'}}>{totalAllTime.toLocaleString('en-US')}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style={{textAlign: 'center', marginTop: '32px'}}>
+          <p style={{fontSize: '0.85rem', color: 'var(--text-secondary)'}}>
+            💪 ¡Sigue sumando, {currentUser}!
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default App;
+
