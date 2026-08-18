@@ -1,31 +1,34 @@
-# NuFitness Burpee Tracker
+﻿# NuFitness Tracker App
 
-Aplicación Web Progresiva (PWA) diseñada como un servicio práctico y motivacional para entrenamiento personalizado y nutrición. 
+Aplicación Web Progresiva (PWA) de nivel empresarial diseñada para la motivación y el tracking de entrenamiento colaborativo (Burpees y Squats) a través de disciplinas como Hyrox y Funcional.
 
-El objetivo principal de esta herramienta es permitir a la entrenadora mostrar a sus clientes el progreso y avance de sus entrenamientos grupales (específicamente, la suma total de burpees realizados). Al mostrar una métrica de grupo en tiempo real y tener un diseño enfocado en la usabilidad, la aplicación funciona como un poderoso motor para impulsar la motivación de la comunidad.
+NuFitness actúa como el núcleo interactivo de la comunidad: no solo permite a la administración llevar el control histórico de las clases, sino que autoriza a los usuarios a registrar sus propios números en tiempo real para empujar juntos la meta mensual del grupo.
 
-## 🚀 Características Principales
+## 🚀 Arquitectura y Tecnologías (Fase 2)
 
-* **Estadísticas en Tiempo Real**: Sincronización directa con Google Sheets para reflejar los últimos datos cargados por la entrenadora inmediatamente tras cada sesión.
-* **Agrupación Inteligente**: La aplicación consolida automáticamente los registros cuando ocurren múltiples clases en un mismo día, y agrupa el progreso a nivel mensual.
-* **Instalable (PWA)**: Puede instalarse directamente desde el navegador (Chrome/Safari) al inicio del teléfono, funcionando como una App nativa sin pasar por las App Stores, garantizando 100% de seguridad y ausencia de rastreadores de terceros.
-* **Diseño Premium**: Tema oscuro "Dark Mode" diseñado para bajo consumo de batería en pantallas OLED, con acentos color naranja energético propios de la marca.
-* **Menú de Historial Dual**: Navegación ágil mediante pestañas para consultar el *Resumen Mensual* y el detalle de las *Últimas Clases*.
+El proyecto emplea una arquitectura moderna, sin servidor (serverless) y de alta rentabilidad:
 
-## 🛠️ Stack Tecnológico
+* **Frontend**: SPA construida en [React](https://reactjs.org/) + [Vite](https://vitejs.dev/) garantizando extrema velocidad y una interfaz responsiva *Mobile-First*.
+* **Base de Datos / Backend**: API construida sobre **Google Apps Script** (doGet/doPost) que transforma un Google Sheet privado en un endpoint REST full-duplex con capacidades CRUD y validación de usuarios.
+* **Autenticación**: Sistema de auto-registro colaborativo mediante cuentas de acceso seguro.
+* **Estilos y Gráficos**: CSS Modular sin dependencias externas (incluyendo un motor propio de gráficos paramétricos SVG).
+* **Despliegue y Hosting**: CI/CD configurado sobre Github Actions despachando automáticamente hacia GitHub Pages.
 
-El proyecto ha sido construido priorizando un alto rendimiento, bajo costo de mantenimiento y máxima flexibilidad:
+## ✨ Características Principales
 
-* **Frontend**: [React](https://reactjs.org/) + [Vite](https://vitejs.dev/) para una interfaz de usuario reactiva y compilación ultra-rápida.
-* **Estilos**: Vanilla CSS con variables CSS personalizadas, evitando dependencias externas para mantener la ligereza del código.
-* **Base de Datos**: [Google Sheets](https://workspace.google.com/products/sheets/) vía exportación CSV pública. Actúa como un backend sin servidor (serverless), gratuito y extremadamente fácil de mantener para la administradora sin requerir conocimientos de bases de datos.
-* **Despliegue y Hosting**: Automatizado mediante *gh-pages* y alojado gratuitamente en [GitHub Pages](https://pages.github.com/).
-* **Progressive Web App (PWA)**: Configuración nativa mediante `manifest.json` e íconos vectoriales SVG.
+* **Entrada de Datos Colaborativa (Admin Complement Model)**: Los clientes ingresan sus aportes personales tras cada clase. La administración complementa el resto, asegurando una estadística perfecta y en tiempo real sin duplicaciones.
+* **Metas Dinámicas Separadas**: Lógica asíncrona que calcula y dibuja la línea de progreso contra objetivos dinámicos configurables por clase y ejercicio.
+* **Historial Individualizado**: Las listas de registros reconocen y premian individualmente el aporte nominal de cada usuario con la etiqueta comunitaria.
+* **Aplicación Instalable (PWA)**: Iconos nativos, caché en dispositivos móviles y modo inmersivo sin barra de navegador.
 
-## 📦 Instalación Local para Desarrollo
+## 🛠️ Instalación y Desarrollo
 
-1. Clona el repositorio.
-2. Asegúrate de tener Node.js instalado.
-3. Ejecuta `npm install` para instalar las dependencias.
-4. Ejecuta `npm run dev` para iniciar el servidor de desarrollo local.
-5. Ejecuta `npm run build` para generar el código de producción.
+1. Clona el repositorio: git clone https://github.com/Kokit0/burpee-tracker-app.git
+2. Instala los paquetes: 
+pm install
+3. Despliega en modo local: 
+pm run dev
+4. Compila para producción: 
+pm run build
+
+> **Nota para el Backend**: Para instanciar tu propia base de datos, debes ejecutar el script Code.gs documentado en el directorio docs/planning/ de este repositorio en un entorno de Google Sheets y obtener tu propia URL de API.

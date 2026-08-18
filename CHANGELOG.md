@@ -2,6 +2,17 @@
 
 Todos los cambios notables en este proyecto serÃ¡n documentados en este archivo.
 
+## [2.0.0] - Backend Serverless, Autenticación y Registros Colaborativos - 2026-08-18
+
+### Añadido
+- **API REST con Google Apps Script**: Migración total de la base de datos de una lectura estática de CSV a una API dinámica capaz de recibir peticiones POST y GET con manejo nativo de CORS.
+- **Sistema de Cuentas de Usuario**: Implementación de un modelo de autenticación y auto-registro (LoginModal) para clientes, permitiendo que aporten sus propios números a la meta grupal.
+- **Formulario In-App (Aportes)**: Se añadió un componente seguro AddModal para el ingreso de registros diarios (clase, fecha, burpees, squats) que actualiza la base de datos en tiempo real.
+- **Autoría de Registros**: Historial individual en la pestaña *Últimos Registros* ahora identifica nominalmente a los usuarios aportantes, ocultando inteligentemente los ingresos correspondientes a la cuenta Admin (Ingreso Complemento).
+
+### Modificado
+- **Arquitectura de Layout (Mobile First)**: Limpieza completa de la cabecera, reubicando la botonera de acciones e ingresos a una barra inferior responsiva y optimizada para uso con pulgares.
+- **Paridad de Fechas ISO**: Modernización de la función parseDate para normalizar cadenas ISO 8601 (T00:00:00.000Z) despachadas por la nueva API.
 ## [1.4.3] - Arquitectura Multi-Clase y GrÃ¡ficos - 2026-08-17
 
 ### AÃ±adido
@@ -34,3 +45,4 @@ Todos los cambios notables en este proyecto serÃ¡n documentados en este archivo.
 ### Modificado
 - Se reemplazÃ³ el icono y logotipo genÃ©rico (Vite) por el branding oficial de **NuFitness**.
 - Se estandarizÃ³ la informaciÃ³n visual central: El nÃºmero en gran formato muestra ahora el acumulado histÃ³rico de todo el grupo para el mes activo, y el texto secundario indica la fecha y contribuciÃ³n de la Ãºltima sesiÃ³n ingresada.
+
