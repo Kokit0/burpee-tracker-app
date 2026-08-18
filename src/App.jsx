@@ -4,7 +4,10 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbwcTYAtC0k8TF8X_pEh2ngu
 
 function parseDate(dateStr) {
   if (!dateStr) return null;
-  const str = dateStr.toString().trim();
+  let str = dateStr.toString().trim();
+  if (str.includes('T')) {
+    str = str.split('T')[0];
+  }
   const parts = str.split(/[-/]/);
   
   if (parts.length === 3) {
@@ -263,21 +266,12 @@ function App() {
   return (
     <>
       <div className="app-container">
-        <header className="brand-header" style={{ position: 'relative' }}>
+        <header className="brand-header" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <svg className="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"></path>
             </svg>
             <span className="brand-name">NuFitness</span>
-          </div>
-          <div className="user-controls" style={{position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)'}}>
-            {currentUser ? (
-              <button className="auth-btn user" onClick={() => {if(window.confirm('¿Cerrar sesión?')) handleLogout()}}>
-                {currentUser}
-              </button>
-            ) : (
-              <button className="auth-btn" onClick={() => setShowLogin(true)}>Entrar</button>
-            )}
           </div>
         </header>
 
@@ -311,7 +305,7 @@ function App() {
 
             <ProgressChart dailyHistory={currentMonthObj.dailyHistory} currentGoal={currentGoal} />
 
-            <div className="action-buttons" style={{display: 'flex', gap: '16px', justifyContent: 'center'}}>
+            <div className="action-buttons" style={{display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '16px'}}>
               <button className="menu-trigger" onClick={() => setIsMenuOpen(true)}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -322,13 +316,24 @@ function App() {
                 Historial
               </button>
               
-              {currentUser && (
-                <button className="menu-trigger primary-action" style={{backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}} onClick={() => setShowAdd(true)}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  Aportar
+              {currentUser ? (
+                <>
+                  <button className="menu-trigger" style={{color: 'var(--accent-color)', borderColor: 'var(--accent-color)'}} onClick={() => {if(window.confirm('¿Cerrar sesión?')) handleLogout()}}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    {currentUser}
+                  </button>
+                  <button className="menu-trigger primary-action" style={{backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}} onClick={() => setShowAdd(true)}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Aportar
+                  </button>
+                </>
+              ) : (
+                <button className="menu-trigger primary-action" style={{backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}} onClick={() => setShowLogin(true)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                  Entrar
                 </button>
               )}
             </div>
