@@ -2,8 +2,22 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
-## [1.0.0] - Versión UAT (User Acceptance Testing) - 2026-08-17
+## [1.4.3] - Arquitectura Multi-Clase y Gráficos - 2026-08-17
 
+### Añadido
+- **Arquitectura Multi-Clase y Ejercicios**: Soporte dinámico para múltiples tipos de clases (Hyrox, Funcional) y ejercicios (Burpees, Squats).
+- **Metas Dinámicas Separadas**: Lógica de doble-búsqueda (`Promise.all`) para leer la configuración de objetivos (goals) desde una segunda hoja de Google Sheets, permitiendo metas personalizadas para cada combinación de clase y ejercicio.
+- **Gráfico SVG Minimalista**: Componente visual ligero e interactivo que mapea el progreso acumulativo diario respecto a la meta mensual directamente en la interfaz.
+
+### Modificado
+- **Procesador de Fechas**: Se robusteció la función `parseDate` para detectar e interpretar automáticamente el formato ISO `YYYY-MM-DD` exportado por Google Sheets, solucionando problemas críticos de ordenamiento.
+- **Revisión de UI/UX**:
+  - Incremento del tamaño del logo y nombre de marca en la cabecera.
+  - Modificación del flujo de caja de la cabecera (`position: static`) para evitar superposiciones con los botones de menú en resoluciones amplias.
+  - El contador principal (acumulado / objetivo) ahora se distribuye apilado verticalmente y homogeneizado en tamaño para un impacto visual máximo.
+  - Aumento considerable en las dimensiones interactivas (`padding` y tamaño de fuente) de los selectores de menú para usabilidad óptima en escritorio y tabletas.
+
+## [1.0.0] - Versión UAT (User Acceptance Testing) - 2026-08-17
 ### Añadido
 - **Aplicación Web Progresiva (PWA)**: Implementación de PWA con `manifest.json` y logo de marca ("Llama/Gota") para permitir a los usuarios instalar la aplicación directamente en la pantalla de inicio de dispositivos móviles (Android/iOS) sin pasar por App Stores.
 - **Backend Integrado con Google Sheets**: Conexión de solo lectura en tiempo real con una hoja de cálculo pública de Google (CSV) para obtener y actualizar el conteo de burpees sin necesidad de una base de datos compleja.

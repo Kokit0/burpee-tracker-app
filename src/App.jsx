@@ -283,10 +283,10 @@ function App() {
 
             <div className="counter-wrapper">
               <p className="label">Total del Grupo</p>
-              <h1 className="counter-value">
-                {currentMonthObj.total.toLocaleString('en-US')}
-                <span className="goal-text"> / {currentGoal.toLocaleString('en-US')}</span>
-              </h1>
+              <div className="counter-value">
+                <div>{currentMonthObj.total.toLocaleString('en-US')}</div>
+                <div className="goal-text">/ {currentGoal.toLocaleString('en-US')}</div>
+              </div>
               <h2 className="month-display">{currentMonthObj.monthYear}</h2>
               {currentMonthObj.latestSession && (
                 <p className="latest-session-text">
