@@ -614,7 +614,7 @@ function StatsModal({ currentUser, allData, onClose }) {
   const [activeTab, setActiveTab] = useState('Burpees');
   
   const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentMonthKey = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
   const currentYear = now.getFullYear().toString();
 
   let totalMonth = 0;
@@ -631,7 +631,7 @@ function StatsModal({ currentUser, allData, onClose }) {
     
     if (d.dateObj && d.dateObj.sortKey) {
       const yearStr = d.dateObj.sortKey.substring(0, 4);
-      const monthKey = d.dateObj.sortKey.substring(0, 7);
+      const monthKey = d.dateObj.sortKey.substring(0, 6);
 
       if (yearStr === currentYear) {
         totalYear += val;
