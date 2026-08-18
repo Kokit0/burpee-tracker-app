@@ -1,48 +1,52 @@
-import { useState, useEffect } from 'react';
-import './index.css';
+import React, { useState, useEffect } from 'react';
 
-const SPREADSHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT44e0CJHeGd_n75F4wPQxt4JqOvyK7cQfMM8ZXK8xv7ldcqQOdCKXA5b7czGA5JDgUbPEt9sCNq6IG/pub?output=csv";
-const GOALS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT44e0CJHeGd_n75F4wPQxt4JqOvyK7cQfMM8ZXK8xv7ldcqQOdCKXA5b7czGA5JDgUbPEt9sCNq6IG/pub?gid=970350612&single=true&output=csv";
-
-const MONTH_NAMES = {
-  "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
-  "05": "Mayo", "06": "Junio", "07": "Julio", "08": "Agosto",
-  "09": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
-};
+const API_URL = 'https://script.google.com/macros/s/AKfycbwcTYAtC0k8TF8X_pEh2ngu4EdL93-Fk7xAGdS50a_19GmjDQ_wWKIKC7lq0in6gKPT/exec';
 
 function parseDate(dateStr) {
-  const parts = dateStr.trim().replace(/\//g, '-').split('-');
+  if (!dateStr) return null;
+  const str = dateStr.toString().trim();
+  const parts = str.split(/[-/]/);
+  
   if (parts.length === 3) {
-    let yearNum, monthNum, dayNum;
-    
-    // Check if the first part is a 4-digit year (YYYY-MM-DD)
     if (parts[0].length === 4) {
-      yearNum = parts[0];
-      monthNum = parts[1].padStart(2, '0');
-      dayNum = parts[2].padStart(2, '0');
+      // YYYY-MM-DD
+      const year = parts[0];
+      const month = parts[1].padStart(2, '0');
+      const day = parts[2].padStart(2, '0');
+      return {
+        raw: `${day}-${month}-${year}`,
+        sortKey: `${year}${month}${day}`,
+        monthYear: getMonthName(month, year),
+        dayOnly: day
+      };
     } else {
-      // Assume DD-MM-YYYY
-      dayNum = parts[0].padStart(2, '0');
-      monthNum = parts[1].padStart(2, '0');
-      yearNum = parts[2];
-      if (yearNum.length === 2) yearNum = "20" + yearNum;
+      // DD-MM-YYYY
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      const year = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+      return {
+        raw: `${day}-${month}-${year}`,
+        sortKey: `${year}${month}${day}`,
+        monthYear: getMonthName(month, year),
+        dayOnly: day
+      };
     }
-
-    const monthName = MONTH_NAMES[monthNum] || `Mes ${monthNum}`;
-    return {
-      raw: dateStr,
-      monthYear: `${monthName} ${yearNum}`,
-      sortKey: `${yearNum}${monthNum}${dayNum}`,
-      dayOnly: dayNum
-    };
   }
-  return { raw: dateStr, monthYear: dateStr, sortKey: '0', dayOnly: dateStr };
+  return { raw: str, sortKey: str, monthYear: str, dayOnly: str };
 }
 
-function ProgressChart({ dailyHistory, currentGoal }) {
-  if (!dailyHistory || dailyHistory.length === 0) return null;
+function getMonthName(monthStr, yearStr) {
+  const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const monthIdx = parseInt(monthStr, 10) - 1;
+  if (monthIdx >= 0 && monthIdx < 12) {
+    return `${months[monthIdx]} ${yearStr}`;
+  }
+  return `${monthStr}-${yearStr}`;
+}
 
-  // Sort ascending for the chart (oldest to newest)
+const ProgressChart = ({ dailyHistory, currentGoal }) => {
+  if (!dailyHistory || dailyHistory.length === 0) return null;
+  
   const sortedHistory = [...dailyHistory].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   
   let runningTotal = 0;
@@ -56,7 +60,7 @@ function ProgressChart({ dailyHistory, currentGoal }) {
     };
   });
 
-  const width = 1000; // Using a large viewbox for crisp scaling
+  const width = 1000; 
   const height = 400;
   const paddingX = 40;
   const paddingY = 60;
@@ -65,7 +69,7 @@ function ProgressChart({ dailyHistory, currentGoal }) {
 
   const dx = innerWidth / Math.max(1, points.length - 1);
   const maxAccumulated = Math.max(currentGoal, points[points.length - 1].accumulated);
-  const maxY = Math.max(currentGoal, maxAccumulated * 1.1); // Add 10% padding above
+  const maxY = Math.max(currentGoal, maxAccumulated * 1.1); 
 
   const goalY = height - paddingY - (currentGoal / maxY) * innerHeight;
 
@@ -78,14 +82,10 @@ function ProgressChart({ dailyHistory, currentGoal }) {
   return (
     <div className="chart-wrapper">
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
-        {/* Goal Line */}
         <line x1={paddingX} y1={goalY} x2={width - paddingX} y2={goalY} stroke="var(--text-secondary)" strokeDasharray="8 8" strokeWidth="2" opacity="0.5" />
         <text x={paddingX} y={goalY - 15} fill="var(--text-secondary)" fontSize="20" fontWeight="600" opacity="0.7">META {currentGoal.toLocaleString()}</text>
-
-        {/* Progress Line */}
         <path d={pathD} fill="none" stroke="var(--accent-color)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
         
-        {/* Points and Labels */}
         {points.map((p, i) => {
           const x = paddingX + i * dx;
           const y = height - paddingY - (p.accumulated / maxY) * innerHeight;
@@ -100,7 +100,7 @@ function ProgressChart({ dailyHistory, currentGoal }) {
       </svg>
     </div>
   );
-}
+};
 
 function App() {
   const [allData, setAllData] = useState([]);
@@ -109,98 +109,104 @@ function App() {
     'Funcional': { 'Burpees': 10000, 'Squats': 10000 }
   });
 
-  const [activeClass, setActiveClass] = useState('Hyrox'); // 'Hyrox' | 'Funcional'
-  const [activeExercise, setActiveExercise] = useState('Burpees'); // 'Burpees' | 'Squats'
+  const [activeClass, setActiveClass] = useState('Hyrox'); 
+  const [activeExercise, setActiveExercise] = useState('Burpees'); 
   
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('monthly'); // 'monthly' | 'recent'
+  const [activeTab, setActiveTab] = useState('monthly'); 
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [dataRes, goalsRes] = await Promise.all([
-          fetch(SPREADSHEET_CSV_URL),
-          fetch(GOALS_CSV_URL)
-        ]);
+  // Auth & Modals
+  const [currentUser, setCurrentUser] = useState(localStorage.getItem('nufitness_user') || null);
+  const [usersList, setUsersList] = useState([]);
+  const [showLogin, setShowLogin] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
 
-        if (!dataRes.ok || !goalsRes.ok) throw new Error('Error al cargar los datos');
-        
-        const csvText = await dataRes.text();
-        const goalsText = await goalsRes.text();
-        
-        // --- Parse Goals ---
-        const goalLines = goalsText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        const parsedGoals = {
-          'Hyrox': { 'Burpees': 10000, 'Squats': 10000 },
-          'Funcional': { 'Burpees': 10000, 'Squats': 10000 }
-        };
-        
-        if (goalLines.length > 1) {
-          goalLines.slice(1).forEach(row => {
-             const pts = row.split(',');
-             if (pts.length >= 3) {
-                const clase = pts[0].trim().toLowerCase().includes('funcional') ? 'Funcional' : 'Hyrox';
-                const ej = pts[1].trim().toLowerCase().includes('squats') ? 'Squats' : 'Burpees';
-                const meta = parseInt(pts[2].replace(/"/g, '').replace(/,/g, ''), 10) || 10000;
-                parsedGoals[clase][ej] = meta;
-             }
+  const fetchAppData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_URL}?action=getData`);
+      if (!res.ok) throw new Error('Error al cargar la base de datos');
+      const json = await res.json();
+      if (json.status !== 'success') throw new Error(json.message);
+      
+      const goalsData = json.data.metas;
+      const parsedGoals = {
+        'Hyrox': { 'Burpees': 10000, 'Squats': 10000 },
+        'Funcional': { 'Burpees': 10000, 'Squats': 10000 }
+      };
+      
+      if (goalsData && goalsData.length > 1) {
+        goalsData.slice(1).forEach(row => {
+           if(row.length >= 3) {
+             const clase = row[0].toString().toLowerCase().includes('funcional') ? 'Funcional' : 'Hyrox';
+             const ej = row[1].toString().toLowerCase().includes('squats') ? 'Squats' : 'Burpees';
+             const meta = parseInt(row[2].toString().replace(/"/g, '').replace(/,/g, ''), 10) || 10000;
+             parsedGoals[clase][ej] = meta;
+           }
+        });
+      }
+      setGoals(parsedGoals);
+
+      const datosData = json.data.datos;
+      if (!datosData || datosData.length < 2) throw new Error('La hoja está vacía o cargando.');
+
+      const headers = datosData[0].map(h => h.toString().toLowerCase());
+      const dateIdx = headers.findIndex(h => h.includes('fecha') || h.includes('mes'));
+      const serviceIdx = headers.findIndex(h => h.includes('servicio') || h.includes('clase'));
+      const burpeesIdx = headers.findIndex(h => h.includes('burpees'));
+      const squatsIdx = headers.findIndex(h => h.includes('squats'));
+      
+      const parsed = [];
+      datosData.slice(1).forEach(row => {
+        const rawDate = dateIdx >= 0 && row[dateIdx] ? row[dateIdx].toString().trim() : '';
+        const serviceStr = serviceIdx >= 0 && row[serviceIdx] ? row[serviceIdx].toString().trim() : '';
+        const burpeesStr = burpeesIdx >= 0 && row[burpeesIdx] ? row[burpeesIdx].toString().replace(/"/g, '').replace(/,/g, '').trim() : '0';
+        const squatsStr = squatsIdx >= 0 && row[squatsIdx] ? row[squatsIdx].toString().replace(/"/g, '').replace(/,/g, '').trim() : '0';
+
+        if (rawDate) {
+          parsed.push({
+            dateObj: parseDate(rawDate),
+            servicio: serviceStr.toLowerCase().includes('funcional') ? 'Funcional' : 'Hyrox',
+            burpees: parseInt(burpeesStr, 10) || 0,
+            squats: parseInt(squatsStr, 10) || 0
           });
         }
-        setGoals(parsedGoals);
+      });
 
-        // --- Parse Data ---
-        const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-        if (lines.length < 2) throw new Error('La hoja está vacía.');
+      if (parsed.length === 0) throw new Error('No se encontraron datos históricos válidos.');
+      
+      setAllData(parsed);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
 
-        const headerLine = lines[0].toLowerCase();
-        const headers = headerLine.split(',').map(h => h.trim());
-        
-        const dateIdx = headers.findIndex(h => h.includes('fecha') || h.includes('mes'));
-        const serviceIdx = headers.findIndex(h => h.includes('servicio') || h.includes('clase'));
-        const burpeesIdx = headers.findIndex(h => h.includes('burpees'));
-        const squatsIdx = headers.findIndex(h => h.includes('squats'));
-        
-        const dataRows = lines.slice(1);
-        
-        const parsed = [];
-        dataRows.forEach(row => {
-          const parts = row.split(',');
-          
-          const rawDate = dateIdx >= 0 && parts[dateIdx] ? parts[dateIdx].trim() : '';
-          const serviceStr = serviceIdx >= 0 && parts[serviceIdx] ? parts[serviceIdx].trim() : '';
-          const burpeesStr = burpeesIdx >= 0 && parts[burpeesIdx] ? parts[burpeesIdx].replace(/"/g, '').replace(/,/g, '').trim() : '0';
-          const squatsStr = squatsIdx >= 0 && parts[squatsIdx] ? parts[squatsIdx].replace(/"/g, '').replace(/,/g, '').trim() : '0';
+  const fetchUsersList = async () => {
+    try {
+      const r = await fetch(`${API_URL}?action=getUsers`);
+      const j = await r.json();
+      if(j.status === 'success') setUsersList(j.data);
+    } catch(e) { console.error("Error fetching users"); }
+  };
 
-          if (rawDate) {
-            parsed.push({
-              dateObj: parseDate(rawDate),
-              servicio: serviceStr.toLowerCase().includes('funcional') ? 'Funcional' : 'Hyrox',
-              burpees: parseInt(burpeesStr, 10) || 0,
-              squats: parseInt(squatsStr, 10) || 0
-            });
-          }
-        });
-
-        if (parsed.length === 0) throw new Error('No se encontraron datos en la hoja.');
-        
-        setAllData(parsed);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  useEffect(() => {
+    fetchAppData();
+    fetchUsersList();
   }, []);
 
-  // Filter and Aggregate Data based on current selection
+  const handleLogout = () => {
+    localStorage.removeItem('nufitness_user');
+    setCurrentUser(null);
+  };
+
+  // Filter Data
   const filteredData = allData.filter(d => d.servicio === activeClass);
-  
   const rawDaily = {};
   filteredData.forEach(d => {
     const exValue = activeExercise === 'Burpees' ? d.burpees : d.squats;
@@ -241,17 +247,15 @@ function App() {
   const monthlyData = Object.values(rawMonthly).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
   const dailyData = Object.values(rawDaily).sort((a, b) => b.sortKey.localeCompare(a.sortKey));
 
-  // Ensure current index is valid
   const safeMonthIndex = Math.min(currentMonthIndex, Math.max(0, monthlyData.length - 1));
   const currentMonthObj = monthlyData[safeMonthIndex] || { monthYear: "---", total: 0, latestSession: null, dailyHistory: [] };
-
   const currentGoal = goals[activeClass][activeExercise];
 
-  if (loading) {
+  if (loading && allData.length === 0) {
     return (
       <div className="app-container">
         <div className="loading-spinner"></div>
-        <p className="label">Cargando NuFitness...</p>
+        <p className="label">Conectando con Servidor...</p>
       </div>
     );
   }
@@ -259,18 +263,28 @@ function App() {
   return (
     <>
       <div className="app-container">
-        <header className="brand-header">
-          <svg className="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"></path>
-          </svg>
-          <span className="brand-name">NuFitness</span>
+        <header className="brand-header" style={{ position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <svg className="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"></path>
+            </svg>
+            <span className="brand-name">NuFitness</span>
+          </div>
+          <div className="user-controls" style={{position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)'}}>
+            {currentUser ? (
+              <button className="auth-btn user" onClick={() => {if(window.confirm('¿Cerrar sesión?')) handleLogout()}}>
+                {currentUser}
+              </button>
+            ) : (
+              <button className="auth-btn" onClick={() => setShowLogin(true)}>Entrar</button>
+            )}
+          </div>
         </header>
 
         {error ? (
           <div className="error-message">{error}</div>
         ) : (
           <div className="main-content">
-            {/* Top Navigation */}
             <div className="nav-level-1">
               <button className={`nav-btn ${activeClass === 'Hyrox' ? 'active' : ''}`} onClick={() => {setActiveClass('Hyrox'); setCurrentMonthIndex(0);}}>HYROX</button>
               <button className={`nav-btn ${activeClass === 'Funcional' ? 'active' : ''}`} onClick={() => {setActiveClass('Funcional'); setCurrentMonthIndex(0);}}>FUNCIONAL</button>
@@ -297,22 +311,33 @@ function App() {
 
             <ProgressChart dailyHistory={currentMonthObj.dailyHistory} currentGoal={currentGoal} />
 
-            <button className="menu-trigger" onClick={() => setIsMenuOpen(true)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              Historial
-            </button>
+            <div className="action-buttons" style={{display: 'flex', gap: '16px', justifyContent: 'center'}}>
+              <button className="menu-trigger" onClick={() => setIsMenuOpen(true)}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Historial
+              </button>
+              
+              {currentUser && (
+                <button className="menu-trigger primary-action" style={{backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}} onClick={() => setShowAdd(true)}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  Aportar
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Bottom Sheet Menu */}
+      {/* Historial Menu */}
       <div className={`overlay ${isMenuOpen ? 'open' : ''}`} onClick={() => setIsMenuOpen(false)}></div>
-      
       <div className={`bottom-sheet ${isMenuOpen ? 'open' : ''}`}>
         <div className="sheet-header" style={{ marginBottom: '16px' }}>
           <h3 className="sheet-title">Historial ({activeClass} - {activeExercise})</h3>
@@ -355,12 +380,184 @@ function App() {
               </li>
             ))
           )}
-          {monthlyData.length === 0 && (
-            <p style={{textAlign: 'center', color: 'var(--text-secondary)', padding: '20px'}}>No hay datos registrados aún.</p>
-          )}
         </ul>
       </div>
+
+      {/* Login Modal */}
+      {showLogin && (
+        <LoginModal 
+          usersList={usersList} 
+          onClose={() => setShowLogin(false)} 
+          onLogin={(user) => {
+            setCurrentUser(user);
+            setShowLogin(false);
+          }} 
+        />
+      )}
+
+      {/* Add Entry Modal */}
+      {showAdd && (
+        <AddModal 
+          currentUser={currentUser}
+          activeClass={activeClass}
+          onClose={() => setShowAdd(false)}
+          onAdded={() => {
+            setShowAdd(false);
+            fetchAppData();
+          }}
+        />
+      )}
     </>
+  );
+}
+
+function LoginModal({ usersList, onClose, onLogin }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if(!username || !password) return;
+    setLoading(true); setError('');
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'login', username, password })
+      });
+      const json = await res.json();
+      if (json.status === 'success') {
+        localStorage.setItem('nufitness_user', json.data.username);
+        onLogin(json.data.username);
+      } else {
+        setError(json.message);
+      }
+    } catch(err) {
+      setError('Error de conexión');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Autenticación</h2>
+        <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>
+          Ingresa para sumar al récord grupal. Si tu nombre no existe, se creará automáticamente con tu contraseña.
+        </p>
+        <form onSubmit={handleSubmit} className="modal-form" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+          <input 
+            list="users-list" 
+            value={username} 
+            onChange={e=>setUsername(e.target.value)} 
+            placeholder="Tu Nombre o Alias (ej. Carlos M.)" 
+            className="modal-input"
+            required
+          />
+          <datalist id="users-list">
+             {usersList.map(u => <option key={u} value={u} />)}
+          </datalist>
+          
+          <input 
+            type="password" 
+            value={password} 
+            onChange={e=>setPassword(e.target.value)} 
+            placeholder="Contraseña" 
+            className="modal-input"
+            required
+          />
+          {error && <div className="modal-error" style={{color: '#ff4d4d', fontWeight: 'bold'}}>{error}</div>}
+          
+          <div className="modal-actions" style={{display: 'flex', gap: '12px', marginTop: '8px'}}>
+            <button type="button" onClick={onClose} className="menu-trigger" style={{flex: 1}}>Cancelar</button>
+            <button type="submit" disabled={loading} className="menu-trigger primary-action" style={{flex: 1, backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}}>
+              {loading ? 'Entrando...' : 'Ingresar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddModal({ currentUser, activeClass, onClose, onAdded }) {
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [service, setService] = useState(activeClass);
+  const [burpees, setBurpees] = useState('');
+  const [squats, setSquats] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    const [y, m, d] = date.split('-');
+    const formattedDate = `${d}-${m}-${y}`;
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ 
+          action: 'addEntry', 
+          username: currentUser, 
+          date: formattedDate, 
+          service, 
+          burpees: burpees || 0, 
+          squats: squats || 0 
+        })
+      });
+      const json = await res.json();
+      if(json.status === 'success') {
+        onAdded();
+      } else {
+        alert(json.message);
+      }
+    } catch(err) {
+      alert('Error de conexión');
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h2>Registrar Aporte</h2>
+        <p className="modal-desc" style={{marginBottom: '20px', color: 'var(--text-secondary)'}}>Agrega tus números para empujar la meta grupal. ¡Todo suma!</p>
+        <form onSubmit={handleSubmit} className="modal-form" style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+          <div>
+            <label className="modal-label" style={{display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontWeight: 'bold'}}>Fecha</label>
+            <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="modal-input" required />
+          </div>
+          
+          <div>
+            <label className="modal-label" style={{display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontWeight: 'bold'}}>Clase / Servicio</label>
+            <select value={service} onChange={e=>setService(e.target.value)} className="modal-input" required>
+              <option value="Hyrox">Hyrox</option>
+              <option value="Funcional">Funcional</option>
+            </select>
+          </div>
+          
+          <div style={{display:'flex', gap:'12px'}}>
+            <div style={{flex:1}}>
+              <label className="modal-label" style={{display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontWeight: 'bold'}}>Burpees</label>
+              <input type="number" min="0" value={burpees} onChange={e=>setBurpees(e.target.value)} className="modal-input" placeholder="0" />
+            </div>
+            <div style={{flex:1}}>
+              <label className="modal-label" style={{display: 'block', marginBottom: '8px', color: 'var(--text-secondary)', fontWeight: 'bold'}}>Squats</label>
+              <input type="number" min="0" value={squats} onChange={e=>setSquats(e.target.value)} className="modal-input" placeholder="0" />
+            </div>
+          </div>
+
+          <div className="modal-actions" style={{display: 'flex', gap: '12px', marginTop: '8px'}}>
+            <button type="button" onClick={onClose} className="menu-trigger" style={{flex: 1}}>Cancelar</button>
+            <button type="submit" disabled={loading} className="menu-trigger primary-action" style={{flex: 1, backgroundColor: 'var(--accent-color)', color: 'var(--bg-color)'}}>
+              {loading ? 'Guardando...' : 'Sumar al Grupo'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
